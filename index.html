@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>基金分析平台 - 资金流向 · 持仓分析</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loadingScreen" style="position:fixed;inset:0;z-index:9999;background:var(--bg,#f1f5f9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s">
+  <div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite"></div>
+  <div style="font-size:16px;font-weight:600;color:#64748b">基金分析平台</div>
+  <div style="font-size:13px;color:#94a3b8">数据加载中...</div>
+</div>
+<style>
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="2" y="2" width="24" height="24" rx="6" fill="#2563eb"/>
+            <path d="M8 18L12 10L16 14L20 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>基金分析</span>
+        </div>
+        <nav class="nav" id="mainNav">
+          <a href="#" class="nav-link active" data-tab="market">基金市场</a>
+          <a href="#" class="nav-link" data-tab="ranking">资金排行</a>
+          <a href="#" class="nav-link" data-tab="holdings">我的持仓</a>
+          <a href="#" class="nav-link" data-tab="favorites">自选</a>
+        </nav>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="搜索基金名称、代码..." autocomplete="off">
+        </div>
+        <div class="date-picker-wrap">
+          <svg class="date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <input type="date" id="datePicker" class="date-input">
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="container">
+
+    <!-- ========== TAB: MARKET ========== -->
+    <section class="tab-panel active" id="tabMarket">
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <span class="stat-label">基金总数</span>
+          <span class="stat-value" id="totalFunds">--</span>
+        </div>
+        <div class="stat-card flow-in">
+          <span class="stat-label">今日净流入</span>
+          <span class="stat-value" id="totalInflow">--</span>
+        </div>
+        <div class="stat-card flow-out">
+          <span class="stat-label">今日净流出</span>
+          <span class="stat-value" id="totalOutflow">--</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">净额</span>
+          <span class="stat-value" id="totalNet">--</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">最热板块</span>
+          <span class="stat-value" id="hotSector">--</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">数据日期</span>
+          <span class="stat-value" id="dataDate">--</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label class="filter-label">基金类型</label>
+          <div class="filter-chips" id="typeFilter">
+            <button class="chip active" data-value="all">全部</button>
+            <button class="chip" data-value="股票型">股票型</button>
+            <button class="chip" data-value="混合型">混合型</button>
+            <button class="chip" data-value="债券型">债券型</button>
+            <button class="chip" data-value="指数型">指数型</button>
+            <button class="chip" data-value="货币型">货币型</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">所属板块</label>
+          <div class="filter-chips" id="sectorFilter"><!-- populated by JS -->
+            <button class="chip active" data-value="all">全部</button>
+            <button class="chip" data-value="新能源">新能源</button>
+            <button class="chip" data-value="消费">消费</button>
+            <button class="chip" data-value="医疗">医疗</button>
+            <button class="chip" data-value="科技">科技</button>
+            <button class="chip" data-value="金融">金融</button>
+            <button class="chip" data-value="军工">军工</button>
+            <button class="chip" data-value="农业">农业</button>
+            <button class="chip" data-value="周期">周期</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">资金流向</label>
+          <div class="filter-chips" id="flowFilter">
+            <button class="chip active" data-value="all">全部</button>
+            <button class="chip" data-value="inflow">净流入</button>
+            <button class="chip" data-value="outflow">净流出</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-bar">
+        <div class="sort-controls">
+          <span class="control-label">排序</span>
+          <select id="sortSelect" class="sort-select">
+            <option value="default">默认排序</option>
+            <option value="nav_desc">净值 ↓</option>
+            <option value="nav_asc">净值 ↑</option>
+            <option value="daily_desc">日涨跌 ↓</option>
+            <option value="daily_asc">日涨跌 ↑</option>
+            <option value="flow_desc">净流入 ↓</option>
+            <option value="flow_asc">净流入 ↑</option>
+            <option value="attention_desc">关注度 ↓</option>
+            <option value="attention_asc">关注度 ↑</option>
+          </select>
+        </div>
+        <div class="realtime-bar" id="realtimeBar">
+          <span class="rt-indicator" id="rtIndicator">○</span>
+          <span class="rt-text" id="rtText">实时</span>
+          <span class="rt-time" id="rtTime"></span>
+        </div>
+        <span class="result-info">共 <strong id="resultCount">0</strong> 只基金</span>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrapper">
+        <table class="fund-table" id="fundTable">
+          <thead>
+            <tr>
+              <th class="col-code">基金代码</th>
+              <th class="col-name">基金名称</th>
+              <th class="col-sector">板块</th>
+              <th class="col-type">类型</th>
+              <th class="col-nav sortable" data-sort="nav">净值 <span class="sort-ind"></span></th>
+              <th class="col-daily sortable" data-sort="daily">日涨跌 <span class="sort-ind"></span></th>
+              <th class="col-flow sortable" data-sort="flow">净流入(万) <span class="sort-ind"></span></th>
+              <th class="col-dir">方向</th>
+              <th class="col-attention sortable" data-sort="attention">关注度 <span class="sort-ind"></span></th>
+              <th class="col-risk">风险</th>
+              <th class="col-action">自选</th>
+            </tr>
+          </thead>
+          <tbody id="fundBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <h3>没有找到匹配的基金</h3>
+        <p>试试调整筛选条件或搜索关键词</p>
+      </div>
+    </section>
+
+    <!-- ========== TAB: RANKING ========== -->
+    <section class="tab-panel" id="tabRanking">
+      <div class="ranking-grid">
+        <!-- Inflow Ranking -->
+        <div class="ranking-tabs" id="rankTabs">
+        <button class="rank-tab active" data-tab="flow_in" onclick="window._rt='flow_in';document.querySelectorAll('.rank-tab').forEach(function(t){t.classList.remove('active');});this.classList.add('active');renderRankings()">净流入</button>
+        <button class="rank-tab" data-tab="flow_out" onclick="window._rt='flow_out';document.querySelectorAll('.rank-tab').forEach(function(t){t.classList.remove('active');});this.classList.add('active');renderRankings()">净流出</button>
+        <button class="rank-tab" data-tab="daily" onclick="window._rt='daily';document.querySelectorAll('.rank-tab').forEach(function(t){t.classList.remove('active');});this.classList.add('active');renderRankings()">日涨跌</button>
+        <button class="rank-tab" data-tab="week" onclick="window._rt='week';document.querySelectorAll('.rank-tab').forEach(function(t){t.classList.remove('active');});this.classList.add('active');renderRankings()">近1周</button>
+        <button class="rank-tab" data-tab="month" onclick="window._rt='month';document.querySelectorAll('.rank-tab').forEach(function(t){t.classList.remove('active');});this.classList.add('active');renderRankings()">近1月</button>
+        <button class="rank-tab" data-tab="ytd" onclick="window._rt='ytd';document.querySelectorAll('.rank-tab').forEach(function(t){t.classList.remove('active');});this.classList.add('active');renderRankings()">今年以来</button>
+      </div>
+      <div class="ranking-card">
+          <div class="ranking-header">
+            <h3><span class="ranking-icon inflow-icon">▲</span> 净流入 TOP 20</h3>
+            <span class="ranking-date" id="rankInflowDate">--</span>
+          </div>
+          <div class="ranking-list" id="inflowRanking"></div>
+        </div>
+        <!-- Outflow Ranking -->
+        <div class="ranking-card">
+          <div class="ranking-header">
+            <h3><span class="ranking-icon outflow-icon">▼</span> 净流出 TOP 20</h3>
+            <span class="ranking-date" id="rankOutflowDate">--</span>
+          </div>
+          <div class="ranking-list" id="outflowRanking"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== TAB: HOLDINGS ========== -->
+    <section class="tab-panel" id="tabHoldings">
+      <!-- Add Holding Bar -->
+      <div class="add-holding-bar">
+        <div class="ah-title">添加持仓</div>
+        <div class="ah-form">
+          <select id="ahFundSelect" class="ah-select">
+            <option value="">选择基金...</option>
+          </select>
+          <input type="number" id="ahCost" class="ah-input" placeholder="持仓成本(元)" step="0.0001" min="0">
+          <input type="number" id="ahShares" class="ah-input" placeholder="持有份额" step="0.01" min="0">
+          <button class="btn btn-primary" id="ahAddBtn">添加</button>
+        <button class="btn btn-sm" onclick="exportHoldings()" style="background:var(--surface);border:1px solid var(--border)">📤 导出CSV</button>
+        </div>
+      </div>
+
+      <!-- Holdings Table -->
+      <div class="table-wrapper">
+        <table class="holdings-table" id="holdingsTable">
+          <thead>
+            <tr>
+              <th>基金名称</th>
+              <th>代码</th>
+              <th>持仓成本</th>
+              <th>现净值</th>
+              <th>持有份额</th>
+              <th>总投入</th>
+              <th>当前市值</th>
+              <th>收益额</th>
+              <th>收益率</th>
+              <th>操作</th>
+              <th>自选</th>
+            </tr>
+          </thead>
+          <tbody id="holdingsBody"></tbody>
+          <tfoot id="holdingsFoot"></tfoot>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyHoldings" style="display:none">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <h3>还没有持仓记录</h3>
+        <p>在上方添加您持有的基金，系统将自动分析</p>
+      </div>
+
+      <!-- Analysis Section -->
+      <div class="analysis-section" id="analysisSection" style="display:none">
+        <h3 class="analysis-title">📊 持仓分析 & 操作建议</h3>
+        <div class="analysis-grid" id="analysisGrid"></div>
+        <!-- Portfolio Summary -->
+        <div class="portfolio-summary" id="portfolioSummary"></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- Fund Detail Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="fundModal">
+    <button class="modal-close" id="modalClose">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="modalTitle">--</h2>
+        <span class="modal-code" id="modalCode">--</span>
+        <span class="modal-type-badge" id="modalType">--</span>
+        <span class="modal-sector-badge" id="modalSector">--</span>
+      </div>
+      <div class="modal-price">
+        <span class="modal-nav" id="modalNav">--</span>
+        <span class="modal-nav-label">单位净值</span>
+        <span class="modal-daily" id="modalDaily">--</span>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-metrics">
+        <div class="modal-metric"><span class="metric-label">累计净值</span><span class="metric-value" id="modalAccNav">--</span></div>
+        <div class="modal-metric"><span class="metric-label">日涨跌</span><span class="metric-value" id="modalDaily2">--</span></div>
+        <div class="modal-metric"><span class="metric-label">净流入(万)</span><span class="metric-value" id="modalFlow">--</span></div>
+        <div class="modal-metric"><span class="metric-label">关注度</span><span class="metric-value" id="modalAttention">--</span></div>
+        <div class="modal-metric"><span class="metric-label">所属板块</span><span class="metric-value" id="modalSector2">--</span></div>
+        <div class="modal-metric"><span class="metric-label">今年以来</span><span class="metric-value" id="modalYtd">--</span></div>
+        <div class="modal-metric"><span class="metric-label">近1周</span><span class="metric-value" id="modalWeek">--</span></div>
+        <div class="modal-metric"><span class="metric-label">近1月</span><span class="metric-value" id="modalMonth">--</span></div>
+        <div class="modal-metric"><span class="metric-label">近3月</span><span class="metric-value" id="modalQuarter">--</span></div>
+        <div class="modal-metric"><span class="metric-label">近6月</span><span class="metric-value" id="modalHalfYear">--</span></div>
+        <div class="modal-metric"><span class="metric-label">近1年</span><span class="metric-value" id="modalYear1">--</span><span class="metric-sub" id="modalNav1yrAgo" style="font-size:10px;color:var(--text-tertiary);display:block;margin-top:1px"></span></div>
+        <div class="modal-metric"><span class="metric-label">近2年</span><span class="metric-value" id="modalYear2">--</span><span class="metric-sub" id="modalNav2yrAgo" style="font-size:10px;color:var(--text-tertiary);display:block;margin-top:1px"></span></div>
+        <div class="modal-metric"><span class="metric-label">近3年</span><span class="metric-value" id="modalYear3">--</span><span class="metric-sub" id="modalNav3yrAgo" style="font-size:10px;color:var(--text-tertiary);display:block;margin-top:1px"></span></div>
+        <div class="modal-metric"><span class="metric-label">成立来</span><span class="metric-value" id="modalTotal">--</span></div>
+        <div class="modal-metric"><span class="metric-label">风险等级</span><span class="metric-value" id="modalRisk">--</span></div>
+        <div class="modal-metric"><span class="metric-label">成立日期</span><span class="metric-value" id="modalDate">--</span></div>
+        <div class="modal-metric"><span class="metric-label">基金规模</span><span class="metric-value" id="modalSize">--</span></div>
+      </div>
+      <div class="modal-manager"><span class="metric-label">基金经理</span><span class="manager-name" id="modalManager">--</span></div>
+    <div class="modal-nav-history" id="navHistoryWrap" style="display:none">
+      <div class="nh-title">📈 净值走势（近60个交易日）</div>
+      <div class="nh-table-wrap">
+        <table class="nh-table" id="navHistoryTable">
+          <thead><tr><th>日期</th><th>单位净值</th><th>累计净值</th><th>日涨跌幅</th></tr></thead>
+          <tbody id="navHistoryBody"></tbody>
+        </table>
+      </div>
+      <div class="nh-loading" id="navHistoryLoading">加载中...</div>
+    </div>
+    </div>
+    <!-- NAV Mini Chart -->
+    <div class="modal-nav-history" id="navChartWrap" style="display:none">
+      <div class="nh-title">📈 净值走势图（近60天）</div>
+      <div class="chart-wrap">
+        <canvas id="navChart" width="520" height="240" style="width:100%;height:auto;cursor:crosshair"></canvas>
+        <div id="chartTooltip" class="chart-tooltip" style="display:none;position:absolute;pointer-events:none;background:#1e293b;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;line-height:1.5;z-index:10;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div>
+      </div>
+    </div>
+    <!-- Yield Trend Chart -->
+    <div class="modal-yield" id="yieldChartWrap" style="display:none">
+      <div class="nh-title">📊 收益走势（各周期）</div>
+      <canvas id="yieldChart" width="520" height="160" style="width:100%;height:auto"></canvas>
+    </div>
+    <!-- Trend Analysis -->
+    <div class="modal-trend" id="trendAnalysisWrap" style="display:none">
+      <div class="nh-title">📋 走势分析</div>
+      <div id="trendContent" class="trend-content"></div>
+    </div>
+    <!-- Custom Tags -->
+    <div class="modal-tags" id="modalTagsWrap" style="display:none">
+      <div class="nh-title">🏷️ 我的标签</div>
+      <div class="tags-display" id="tagsDisplay"></div>
+      <div class="tags-input-row">
+        <input type="text" id="tagInput" class="tag-input" placeholder="输入标签名，回车添加" maxlength="10">
+        <button class="btn btn-sm" id="tagAddBtn">添加</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-alert" id="alertBtn" style="padding:10px 16px;border:none;border-radius:var(--radius-md);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);background:var(--bg);color:var(--text-secondary)">🔕 设预警</button>
+      <button class="btn btn-primary" id="modalAddFavorite">加入自选</button>
+      <button class="btn btn-secondary" id="modalAddHolding">加入持仓</button>
+    </div>
+  </div>
+</div>
+
+<script src="fund-data.js"></script>
+<meta name="description" content="A股基金实时数据分析平台">
+<script src="nav-history-data.js"></script>
+<script src="manager-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
