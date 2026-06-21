@@ -643,3 +643,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
   .page-btn{padding:6px 12px;min-width:36px}
   .edit-btn,.del-btn,.save-btn{padding:6px 12px}
 }
+
+/* Fund search autocomplete */
+.ah-search-wrap{position:relative;flex:1;min-width:180px}
+.ah-input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:13px;font-family:var(--font);color:var(--text);background:var(--bg);outline:none;transition:border-color .15s}
+.ah-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.ah-dropdown{position:absolute;top:100%;left:0;right:0;max-height:300px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);z-index:50;display:none;box-shadow:var(--shadow-md)}
+.ah-dropdown .ah-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .1s}
+.ah-dropdown .ah-item:hover,.ah-dropdown .ah-item.active{background:var(--primary-light);color:var(--primary)}
+.ah-dropdown .ah-item:last-child{border-bottom:none}
+.ah-item .ah-item-code{font-family:monospace;color:var(--text-tertiary);font-size:12px;margin-right:6px}
+:root.dark .ah-dropdown .ah-item:hover{background:var(--surface-hover)}

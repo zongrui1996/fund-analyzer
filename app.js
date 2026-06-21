@@ -1386,14 +1386,51 @@ function addPaginationContainer() {
 }
 
 // ===== ADD HOLDING =====
+var _selectedFundCode = null;
+
 (function() {
-  var sel = document.getElementById('ahFundSelect');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">选择基金...</option>' +
-    FUND_DATA.slice(0, 500).map(function(f) { return '<option value="' + f[0] + '">' + f[0] + ' ' + f[1] + '</option>'; }).join('');
+  var searchInput = document.getElementById('ahFundSearch');
+  var dropdown = document.getElementById('ahFundDropdown');
+  var debounceTimer;
+  
+  function doSearch(val) {
+    var results = [];
+    var q = val.toLowerCase();
+    for (var i = 0; i < FUND_DATA.length; i++) {
+      var f = FUND_DATA[i];
+      if (f[0].indexOf(q) >= 0 || f[1].toLowerCase().indexOf(q) >= 0) {
+        results.push(f);
+        if (results.length >= 20) break;
+      }
+    }
+    if (results.length === 0) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = results.map(function(f) {
+      return '<div class="ah-item" data-code="' + f[0] + '"><span class="ah-item-code">' + f[0] + '</span>' + f[1] + '</div>';
+    }).join('');
+    dropdown.style.display = 'block';
+    dropdown.querySelectorAll('.ah-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        _selectedFundCode = this.dataset.code;
+        searchInput.value = this.querySelector('.ah-item-code').textContent + ' ' + this.textContent.substr(this.textContent.indexOf(' ') + 1);
+        dropdown.style.display = 'none';
+      });
+    });
+  }
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      var val = this.value.trim();
+      if (val.length < 1) { dropdown.style.display = 'none'; return; }
+      debounceTimer = setTimeout(function() { doSearch(val); }, 150);
+    });
+    searchInput.addEventListener('blur', function() {
+      setTimeout(function() { dropdown.style.display = 'none'; }, 200);
+    });
+  }
   
   document.getElementById('ahAddBtn').addEventListener('click', function() {
-    var code = sel.value;
+    var code = _selectedFundCode;
     var cost = parseFloat(document.getElementById('ahCost').value);
     var shares = parseFloat(document.getElementById('ahShares').value);
     if (!code) { toast('请选择基金'); return; }
@@ -1402,7 +1439,7 @@ function addPaginationContainer() {
     if (holdings.find(function(h){return h.fundCode===code})) { toast('该基金已在持仓中'); return; }
     holdings.push({fundCode: code, costPrice: cost, shares: shares});
     saveHoldings();
-    document.getElementById('ahCost').value = ''; document.getElementById('ahShares').value = ''; sel.value = '';
+    document.getElementById('ahCost').value = ''; document.getElementById('ahShares').value = ''; document.getElementById('ahFundSearch').value = ''; _selectedFundCode = null;
     renderHoldings(); toast('已添加持仓');
   });
 })();
