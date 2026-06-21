@@ -447,7 +447,64 @@ function renderHoldings() {
     '<td></td><td></td></tr>';
   
   // Event handlers
-  document.querySelectorAll('.del-btn').forEach(function(btn) {
+  
+  // Insert real-time data cells after 当前市值 column
+  document.querySelectorAll('#holdingsBody tr').forEach(function(tr) {
+    var code = tr.dataset.code;
+    var rt = _rtHoldingsData[code];
+    var td6 = tr.querySelectorAll('td')[6]; // 当前市值 cell
+    if (!td6) return;
+    //估算净值
+    var navCell = document.createElement('td');
+    if (rt && rt.gsz) {
+      navCell.innerHTML = '<span class="num-neutral">' + rt.gsz.toFixed(4) + '</span>';
+    } else {
+      navCell.innerHTML = '<span class="num-neutral">--</span>';
+    }
+    td6.insertAdjacentElement('afterend', navCell);
+    //今日涨跌
+    var chgCell = document.createElement('td');
+    if (rt && rt.gszzl !== undefined) {
+      var cls = rt.gszzl >= 0 ? 'num-up' : 'num-down';
+      chgCell.innerHTML = '<span class="' + cls + '">' + (rt.gszzl >= 0 ? '+' : '') + rt.gszzl.toFixed(2) + '%</span>';
+    } else {
+      chgCell.innerHTML = '<span class="num-neutral">--</span>';
+    }
+    navCell.insertAdjacentElement('afterend', chgCell);
+    //当日收益
+    var plCell = document.createElement('td');
+    if (rt && rt.gsz && rt.dwjz && parseFloat(tr.querySelectorAll('td')[4].textContent)) {
+      var shares = parseFloat(tr.querySelectorAll('td')[4].textContent);
+      var pl = (rt.gsz - rt.dwjz) * shares;
+      var cls = pl >= 0 ? 'num-up' : 'num-down';
+      plCell.innerHTML = '<span class="' + cls + '">' + (pl >= 0 ? '+' : '') + pl.toFixed(2) + '</span>';
+    } else {
+      plCell.innerHTML = '<span class="num-neutral">--</span>';
+    }
+    chgCell.insertAdjacentElement('afterend', plCell);
+  });
+  
+  // Fetch real-time quotes for holdings
+  setTimeout(function() {
+    var codes = [];
+    enriched.forEach(function(e){if(e.fundCode) codes.push(e.fundCode)});
+    codes.slice(0, 5).forEach(function(code) {
+      if (!_rtHoldingsData[code]) {
+        fetchRTQuote(code).then(function(data) {
+          if (data && data.gsz) {
+            _rtHoldingsData[code] = {
+              gsz: parseFloat(data.gsz),
+              gszzl: parseFloat(data.gszzzl) || 0,
+              dwjz: parseFloat(data.dwjz) || 0,
+              gztime: data.gztime || ''
+            };
+            renderHoldings();
+          }
+        });
+      }
+    });
+  }, 500);
+document.querySelectorAll('.del-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       holdings = holdings.filter(function(h){return h.fundCode !== this.dataset.code}.bind(this));
       saveHoldings(); renderHoldings(); toast('已移除持仓');
