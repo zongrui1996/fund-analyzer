@@ -654,3 +654,52 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .ah-dropdown .ah-item:last-child{border-bottom:none}
 .ah-item .ah-item-code{font-family:monospace;color:var(--text-tertiary);font-size:12px;margin-right:6px}
 :root.dark .ah-dropdown .ah-item:hover{background:var(--surface-hover)}
+
+/* ===== Better Mobile Layout ===== */
+@media(max-width:768px){
+  /* Hide less important columns on tablet */
+  .col-compare{display:none}
+  .col-attention{display:none}
+  .fund-table td:nth-child(1),.fund-table th:nth-child(1){display:none}
+  .fund-table td:nth-child(10),.fund-table th:nth-child(10){display:none}
+}
+
+@media(max-width:600px){
+  /* Hide headers for 板块, 类型, 方向, 风险 */
+  .col-sector,.col-type,.col-dir,.col-risk{display:none}
+  /* Hide data cells (note: compare checkbox is td:1, shifting everything) */
+  .fund-table tbody td:nth-child(4),.fund-table thead tr th:nth-child(3){display:none}
+  .fund-table tbody td:nth-child(5),.fund-table thead tr th:nth-child(4){display:none}
+  .fund-table tbody td:nth-child(9),.fund-table thead tr th:nth-child(8){display:none}
+  .fund-table tbody td:nth-child(11),.fund-table thead tr th:nth-child(10){display:none}
+  
+  /* Remaining columns - wider and readable */
+  .col-code{width:55px}
+  .col-name{min-width:100px!important;max-width:120px}
+  .col-nav{width:60px}
+  .col-daily{width:55px}
+  .col-flow{width:72px}
+  .col-action{width:34px}
+  
+  .fund-table td,.fund-table th{padding:8px 4px!important;font-size:13px}
+  .fund-name{font-size:13px}
+  .fund-code{font-size:11px}
+  .num-up,.num-down,.num-neutral,.num-inflow,.num-outflow{font-size:13px}
+  
+  /* Touch-friendly */
+  .fav-btn{padding:6px}
+  .fav-btn svg{width:18px;height:18px}
+  .flow-bar .bar-track{width:30px;height:5px}
+  .attention-bar{display:none!important}
+}
+
+@media(max-width:400px){
+  .col-code{width:55px}
+  .col-name{min-width:90px!important;max-width:100px}
+  .col-nav{width:55px}
+  .col-daily{width:50px}  
+  .col-flow{width:65px}
+  .fund-table td,.fund-table th{padding:6px 3px!important;font-size:12px}
+  .fund-name{font-size:12px}
+  .fund-code{font-size:10px}
+}
