@@ -1557,3 +1557,42 @@ function importHoldings(file) {
   };
   reader.readAsText(file);
 }
+
+// ===== HOLDINGS REAL-TIME P&L =====
+var _rtHoldingsData = {};
+
+function fetchRTQuote(code) {
+  return new Promise(function(resolve) {
+    var cb = 'rt' + code.replace(/^0+/,'');
+    window[cb] = function(data) {
+      delete window[cb];
+      var s = document.querySelector('script[data-rtq="' + code + '"]');
+      if (s) s.remove();
+      resolve(data);
+    };
+    var s = document.createElement('script');
+    s.setAttribute('data-rtq', code);
+    s.src = 'https://fundgz.1234567.com.cn/js/' + code + '.js';
+    s.onerror = function() { delete window[cb]; s.remove(); resolve(null); };
+    setTimeout(function() { if (window[cb]) { delete window[cb]; s.remove(); resolve(null); } }, 5000);
+    document.body.appendChild(s);
+  });
+}
+
+function updateHoldingsRT() {
+  if (!holdings || holdings.length === 0) return;
+  var codes = holdings.map(function(h) { return h.fundCode; });
+  codes.forEach(function(code) {
+    fetchRTQuote(code).then(function(data) {
+      if (data && data.gsz) {
+        _rtHoldingsData[code] = {
+          gsz: parseFloat(data.gsz),
+          gszzl: parseFloat(data.gszzzl) || 0,
+          dwjz: parseFloat(data.dwjz) || 0,
+          gztime: data.gztime || ''
+        };
+        renderHoldings();
+      }
+    });
+  });
+}
