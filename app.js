@@ -1487,3 +1487,36 @@ function getBloggerCommentary(f) {
     '<p>🎙️ <strong>市场观点</strong>：' + c1 + '</p>' +
     '<p>📢 <strong>投资者参考</strong>：' + c2 + '</p></div>';
 }
+
+// ===== IMPORT HOLDINGS =====
+function importHoldings(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var lines = text.split('\n');
+    var imported = 0;
+    for (var i = 1; i < lines.length; i++) { // skip header
+      var parts = lines[i].split(',');
+      if (parts.length >= 3) {
+        var code = parts[0].trim();
+        var cost = parseFloat(parts[4]);
+        var shares = parseFloat(parts[5]);
+        if (code && cost > 0 && shares > 0) {
+          if (!holdings.find(function(h){return h.fundCode===code})) {
+            holdings.push({fundCode: code, costPrice: cost, shares: shares});
+            imported++;
+          }
+        }
+      }
+    }
+    if (imported > 0) {
+      saveHoldings();
+      renderHoldings();
+      toast('成功导入 ' + imported + ' 条持仓数据');
+    } else {
+      toast('未找到有效的持仓数据，请先导出CSV');
+    }
+  };
+  reader.readAsText(file);
+}

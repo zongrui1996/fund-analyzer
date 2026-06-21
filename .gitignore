@@ -5,7 +5,4 @@ tmp/
 temp/
 *.swp
 *.swo
-nav-history-data.js
-fund-data.js
-manager-data.js
 .git
