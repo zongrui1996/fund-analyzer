@@ -465,8 +465,9 @@ function renderHoldings() {
   
   // Event handlers
   
-  ;
-    codes.slice(0, 5).forEach(function(code) {
+  setTimeout(function() {
+    for (var i = 0; i < holdings.length; i++) {
+      var code = holdings[i].fundCode;
       if (!_rtHoldingsData[code]) {
         fetchRTQuote(code).then(function(data) {
           if (data && data.gsz) {
@@ -480,7 +481,7 @@ function renderHoldings() {
           }
         });
       }
-    });
+    }
   }, 500);
 document.querySelectorAll('.del-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
