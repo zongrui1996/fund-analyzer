@@ -463,6 +463,27 @@ function renderHoldings() {
     '<td><span class="' + pctClass(totalYield) + '">' + totalYield.toFixed(2) + '%</span></td>' +
     '<td></td><td></td></tr>';
   
+  // Today P&L
+  var todayTotal = 0, todayCount = 0;
+  for (var i = 0; i < holdings.length; i++) {
+    var rt = _rtHoldingsData[holdings[i].fundCode];
+    if (rt && rt.gsz && rt.dwjz) {
+      todayTotal += (rt.gsz - rt.dwjz) * holdings[i].shares;
+      todayCount++;
+    }
+  }
+  var todayPct = todayCount > 0 && totalValueSum > 0 ? (todayTotal / totalValueSum * 100) : 0;
+  foot.innerHTML +=
+    '<tr style="border-top:2px solid var(--primary);background:var(--primary-light)">' +
+    '<td colspan="6"><strong>📊 今日实时收益</strong></td>' +
+    '<td style="text-align:right;font-weight:700;font-size:15px">' +
+    (todayCount > 0
+      ? '<span class="' + pctClass(todayTotal) + '">' + (todayTotal >= 0 ? '+' : '') + todayTotal.toFixed(2) + '</span>' +
+        '<span style="font-size:12px;color:var(--text-tertiary);margin-left:4px">(' + (todayPct >= 0 ? '+' : '') + todayPct.toFixed(2) + '%)</span>'
+      : '<span class="num-neutral">--</span>') +
+    '</td>' +
+    '<td></td><td></td></tr>';
+  
   // Event handlers
   
   setTimeout(function() {
